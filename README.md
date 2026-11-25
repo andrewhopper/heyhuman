@@ -30,6 +30,17 @@ you  ──link──►   HumanUrl  GET  /f/{id}          host page, strict CSP
                            POST /f/{id}/answer   one-time, then published to IoT Core
 ```
 
+### Architecture
+
+![HeyHuman on AWS: agent calls a SigV4 Function URL, the human opens a public Function URL with a one-time token, both Lambdas write DynamoDB, and the answer is pushed through IoT Core](docs/diagrams/architecture.svg)
+
+### One question, end to end
+
+![Sequence: the agent creates a session, sends the link, the human answers through the sandboxed form, the answer is stored and then published to the agent](docs/diagrams/flow.svg)
+
+Sources are in [`docs/diagrams/`](docs/diagrams/): `.drawio` (open in draw.io to edit), plus `.svg` and `.png` exports.
+
+## Deploy
 ## One-click deploy (CloudFormation)
 
 No CDK, Node or Python needed: the button opens the CloudFormation console with the template filled in.
@@ -57,6 +68,35 @@ make outputs
 ```
 
 Attach the `AgentPolicyArn` output to the IAM user or role your agent runs as.
+
+## Cost
+
+**Idle: about $0 a month.** Lambda, on-demand DynamoDB and IoT Core bill per request, so a stack
+with no open questions costs only storage: a few KB of table items and logs, and the Lambda
+code asset in the CDK bootstrap bucket. That is well under $0.01.
+
+**Per question**, measured on a real smoke test in us-east-1 (one approve/deny question, answered
+after about 40 seconds, both Lambdas cold):
+
+| Item | Used | List price (us-east-1) | Cost |
+|---|---|---|---|
+| Lambda requests | 20 (16 agent, 4 human) | $0.20 per million | $0.000004 |
+| Lambda compute, 256 MB | 6.5 s, mostly two ~3 s cold starts | $0.0000166667 per GB-second | $0.000027 |
+| DynamoDB writes | 11 write units | $0.625 per million | $0.000007 |
+| DynamoDB reads | 9 read units | $0.125 per million | $0.000001 |
+| IoT Core | 1 publish, 1 delivery | $1.00 per million messages | $0.000002 |
+| **Total** | | | **about $0.00004** |
+
+That is about **$0.04 per 1,000 questions**. Warm invocations took about 15 ms, so cost falls
+once the functions are warm. The Lambda free tier (1 million requests and 400,000 GB-seconds a month)
+covers the Lambda lines for most personal use, which leaves about $0.01 per 1,000 questions.
+
+Waiting is what adds up. The CLI polls `GET /sessions/{id}` every 3 seconds (the MCP server
+every 1 second), and each poll is one Lambda call plus one read, about $0.0000004. A question
+left open for its full 10 minutes costs about $0.0001 in polling.
+
+`make deploy EMAIL=...` adds a $5/month budget that emails at 80% of actual spend. Prices are
+list prices at the time of writing; check the AWS pricing pages for your region.
 
 ## Use
 
