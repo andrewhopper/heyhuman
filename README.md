@@ -30,7 +30,22 @@ you  ──link──►   HumanUrl  GET  /f/{id}          host page, strict CSP
                            POST /f/{id}/answer   one-time, then published to IoT Core
 ```
 
-## Deploy
+## One-click deploy (CloudFormation)
+
+No CDK, Node or Python needed: the button opens the CloudFormation console with the template filled in.
+
+[![Launch Stack](https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?templateURL=https://HEYHUMAN_RELEASE_BUCKET.s3.us-east-1.amazonaws.com/heyhuman/latest/heyhuman.template.json&stackName=heyhuman)
+
+1. Click the button (region us-east-1), optionally enter an email for the budget alert, tick the IAM acknowledgement and create the stack.
+2. From the stack's Outputs, copy `AgentUrl` and attach `AgentPolicyArn` to the IAM user or role your agent runs as.
+3. `export HEYHUMAN_AGENT_URL=<AgentUrl>` and run `python3 cli/heyhuman.py ask --template approve-deny --data '{"title":"Hello"}'`.
+
+Maintainers publish the template and Lambda zip with `make publish-oneclick BUCKET=<public-read bucket> PROFILE=<p>`
+(once per region; the Lambda code must sit in a bucket in the stack's region). `make synth-oneclick` builds the template without uploading.
+
+## Deploy (CDK)
+
+Or hand it to Claude Code with [this prompt](docs/deploy-with-claude-code.md).
 
 Needs Python 3.12+, Node 20+ (for the CDK CLI) and AWS credentials for an account you own.
 

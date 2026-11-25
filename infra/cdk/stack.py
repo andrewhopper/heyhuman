@@ -6,6 +6,9 @@ Context values (cdk.json or -c):
   ttlTopicPrefix   MQTT topic prefix (default "heyhuman")
   budgetUsd        monthly AWS Budgets limit for an alert (default 5)
   alertEmail       email for the budget alert (optional; no budget alert without it)
+  oneclick         "true" to synth a portable CloudFormation template: the Lambda code
+                   comes from CodeBucket/CodeKey parameters and the alert email is a
+                   parameter, so the template deploys from the console with no CDK
 """
 # File UUID: 7d3b9e52-1c46-4a8f-b2e7-0f5a6c8d3e91
 
@@ -14,6 +17,9 @@ from __future__ import annotations
 from pathlib import Path
 
 from aws_cdk import (
+    CfnCondition,
+    CfnParameter,
+    Fn,
     CfnOutput,
     Duration,
     RemovalPolicy,
@@ -24,6 +30,7 @@ from aws_cdk import (
     aws_iam as iam,
     aws_lambda as lambda_,
     aws_logs as logs,
+    aws_s3 as s3,
 )
 from constructs import Construct
 
@@ -60,7 +67,16 @@ class HeyHumanStack(Stack):
             removal_policy=RemovalPolicy.DESTROY,
         )
 
-        code = lambda_.Code.from_asset(LAMBDA_DIR, exclude=["__pycache__", "*.pyc"])
+        oneclick = str(self.node.try_get_context("oneclick") or "").lower() == "true"
+        if oneclick:
+            code_bucket = CfnParameter(self, "CodeBucket", default=str(self.node.try_get_context("codeBucket") or ""),
+                                       description="S3 bucket holding the Lambda zip (same region as the stack)")
+            code_key = CfnParameter(self, "CodeKey", default=str(self.node.try_get_context("codeKey") or "heyhuman/lambda.zip"),
+                                    description="S3 key of the Lambda zip")
+            code = lambda_.Code.from_bucket(
+                s3.Bucket.from_bucket_name(self, "CodeSource", code_bucket.value_as_string), code_key.value_as_string)
+        else:
+            code = lambda_.Code.from_asset(LAMBDA_DIR, exclude=["__pycache__", "*.pyc"])
         env = {"TABLE": table.table_name, "EVENTS_TABLE": events.table_name, "TOPIC_PREFIX": prefix}
         topic_arn = f"arn:aws:iot:{self.region}:{self.account}:topic/{prefix}/*"
 
@@ -134,8 +150,14 @@ class HeyHumanStack(Stack):
 
         budget_usd = float(self.node.try_get_context("budgetUsd") or 5)
         alert_email = self.node.try_get_context("alertEmail")
+        condition = None
+        if oneclick:
+            email_param = CfnParameter(self, "AlertEmail", default="",
+                                       description="Email for a monthly budget alert (leave blank for none)")
+            alert_email = email_param.value_as_string
+            condition = CfnCondition(self, "HasAlertEmail", expression=Fn.condition_not(Fn.condition_equals(alert_email, "")))
         if alert_email:
-            budgets.CfnBudget(
+            budget = budgets.CfnBudget(
                 self,
                 "Budget",
                 budget=budgets.CfnBudget.BudgetDataProperty(
@@ -156,6 +178,8 @@ class HeyHumanStack(Stack):
                     )
                 ],
             )
+            if condition is not None:
+                budget.cfn_options.condition = condition
 
         CfnOutput(self, "AgentUrl", value=agent_url.url)
         CfnOutput(self, "HumanUrl", value=human_url.url)
