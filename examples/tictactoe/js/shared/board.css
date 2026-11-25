@@ -1,0 +1,7 @@
+/* File UUID: 7a2e9c14-3b65-4d80-9f1e-c5d8a0b6e273 */
+.ttt{font:16px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#1c1b19;max-width:320px}
+.ttt h2{font-size:16px;margin:0 0 4px}.ttt p{margin:0 0 10px;color:#5b574d}
+.ttt .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.ttt button{aspect-ratio:1;font-family:inherit;font-weight:700;font-size:36px;line-height:1;border:2px solid #1c1b19;border-radius:12px;background:#fff;cursor:pointer}
+.ttt button:disabled{cursor:default;color:#1c1b19}.ttt button.o{color:#c2410c}
+.ttt .tag{display:inline-block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#7a7466;margin-bottom:6px}

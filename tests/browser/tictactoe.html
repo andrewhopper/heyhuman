@@ -1,0 +1,12 @@
+<style>
+.g{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:300px;margin:12px auto}
+.g button{aspect-ratio:1;font:700 40px/1 sans-serif;border:2px solid #1c1b19;border-radius:12px;background:#fff}
+p{text-align:center;font:16px sans-serif}
+</style>
+<p>Agent played O in the corner. Tap a square.</p>
+<div class="g">
+<button data-cell="0" disabled>O</button><button data-cell="1" onclick="decide('1')"></button><button data-cell="2" onclick="decide('2')"></button>
+<button data-cell="3" onclick="decide('3')"></button><button data-cell="4" onclick="decide('4')"></button><button data-cell="5" onclick="decide('5')"></button>
+<button data-cell="6" onclick="decide('6')"></button><button data-cell="7" onclick="decide('7')"></button><button data-cell="8" onclick="decide('8')"></button>
+</div>
+<script>fetch('https://example.com/exfil').catch(function(){document.body.dataset.blocked='1'})</script>

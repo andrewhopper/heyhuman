@@ -1,0 +1,36 @@
+# HeyHuman on your own machine: DynamoDB Local + Mosquitto + the HeyHuman server.
+# EXPERIMENTAL CODE. Do not use in production.
+# File UUID: 2f6d8a39-7b14-4e50-a9c3-1e8b4d6f0a27
+#
+#   HEYHUMAN_AGENT_KEY=$(openssl rand -hex 24) docker compose up --build
+#   export HEYHUMAN_AGENT_URL=http://127.0.0.1:8787 HEYHUMAN_MQTT_URL=mqtt://127.0.0.1:1883
+#   python3 cli/heyhuman.py ask --html form.html --message "Deploy?"
+#
+# Set HUMAN_URL to a Tailscale or tunnel URL so a phone on another network can open links.
+services:
+  dynamodb:
+    image: amazon/dynamodb-local:latest
+    command: ["-jar", "DynamoDBLocal.jar", "-sharedDb", "-dbPath", "/home/dynamodblocal/data"]
+    volumes: ["dynamodb-data:/home/dynamodblocal/data"]
+    user: root
+  mosquitto:
+    image: eclipse-mosquitto:2
+    volumes: ["./local/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro"]
+    ports: ["127.0.0.1:1883:1883"]
+  heyhuman:
+    build: { context: ., dockerfile: local/Dockerfile }
+    depends_on: [dynamodb, mosquitto]
+    ports: ["8787:8787"]
+    environment:
+      HEYHUMAN_STORE: dynamodb
+      DYNAMODB_ENDPOINT: http://dynamodb:8000
+      TABLE: heyhuman
+      HEYHUMAN_PUBLISH: mqtt
+      HEYHUMAN_MQTT_URL: mqtt://mosquitto:1883
+      HEYHUMAN_AGENT_KEY: ${HEYHUMAN_AGENT_KEY:?set HEYHUMAN_AGENT_KEY}
+      HUMAN_URL: ${HUMAN_URL:-http://localhost:8787}
+      AWS_ACCESS_KEY_ID: local
+      AWS_SECRET_ACCESS_KEY: local
+      AWS_DEFAULT_REGION: us-east-1
+volumes:
+  dynamodb-data:

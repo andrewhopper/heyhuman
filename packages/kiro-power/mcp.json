@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "heyhuman": {
+      "command": "uv",
+      "args": ["run", "--project", "/path/to/heyhuman/packages/mcp-server", "heyhuman-mcp"],
+      "env": {
+        "HEYHUMAN_AGENT_URL": "http://127.0.0.1:8787"
+      }
+    }
+  }
+}

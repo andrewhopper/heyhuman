@@ -1,0 +1,35 @@
+{
+  "name": "genui-tictactoe",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "dependencies": {
+    "@a2ui/react": "^0.16.1",
+    "@a2ui/web_core": "^0.16.1",
+    "@ag-ui/client": "^1.0.5",
+    "@ag-ui/core": "^1.0.5",
+    "@ag-ui/encoder": "^1.0.5",
+    "@ai-sdk/react": "^4.0.186",
+    "@mcp-ui/client": "^7.1.1",
+    "@mcp-ui/server": "^6.1.0",
+    "@modelcontextprotocol/ext-apps": "^1.7.5",
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "@types/express": "^5.0.6",
+    "@types/react": "^19.3.2",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "ai": "^7.0.181",
+    "esbuild": "^0.28.2",
+    "express": "^5.3.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8",
+    "zod": "^3.25.76"
+  },
+  "scripts": {
+    "build": "mkdir -p dist && esbuild mcp/guest.ts --bundle --format=esm --outfile=dist/mcp-guest.js && esbuild mcp/sandbox.ts --bundle --format=esm --outfile=dist/mcp-sandbox.js",
+    "test": "npm run build && for s in mcp a2ui agui aisdk; do python3 -I ../tests/play.py $s ../results || exit 1; done && python3 -I ../tests/play_heyhuman.py ../results"
+  }
+}

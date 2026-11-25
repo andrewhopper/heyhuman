@@ -1,0 +1,32 @@
+{
+  "stack": "mcp",
+  "result": "O wins",
+  "moves": [
+    4,
+    1,
+    2,
+    3
+  ],
+  "board": [
+    "O",
+    "X",
+    "X",
+    "X",
+    "X",
+    "",
+    "O",
+    "O",
+    "O"
+  ],
+  "first_paint_s": 1.16,
+  "move_latency_s": [
+    0.39,
+    0.2,
+    0.18,
+    0.17
+  ],
+  "console_errors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "stack": "heyhuman",
+  "result": "O wins",
+  "moves": [
+    4,
+    1,
+    2,
+    3
+  ],
+  "board": [
+    "O",
+    "X",
+    "X",
+    "X",
+    "X",
+    "",
+    "O",
+    "O",
+    "O"
+  ],
+  "links_opened": 4,
+  "move_latency_s_incl_confirm": [
+    0.17,
+    0.2,
+    0.16,
+    0.15
+  ]
+}

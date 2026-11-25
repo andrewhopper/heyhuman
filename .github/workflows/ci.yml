@@ -1,0 +1,20 @@
+# File UUID: 8f3d1b62-7a45-4c09-b2e6-1d9c5a0e7f38
+name: ci
+on:
+  push: { branches: [main] }
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - run: python -m pip install -r infra/cdk/requirements.txt boto3 "moto[dynamodb]" pytest "mcp>=2" paho-mqtt
+      - run: python -m pytest -q tests/test_handlers.py tests/test_stack.py packages/mcp-server/tests
+      - run: cd infra/cdk && npx --yes aws-cdk@2 synth --quiet
+        env: { CDK_DEFAULT_ACCOUNT: "111111111111", CDK_DEFAULT_REGION: "us-east-1" }
