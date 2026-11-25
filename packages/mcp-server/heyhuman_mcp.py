@@ -98,11 +98,13 @@ async def heyhuman_wait(session: str, timeout_seconds: int = 300, run_id: str = 
     if not _SESSION_RE.match(session):
         return {"ok": False, "error": "session must be the 22-character id from heyhuman_start"}
     timeout_seconds = max(1, min(timeout_seconds, 3600))
-    args = ["wait", session, f"--timeout={timeout_seconds}", "--poll=1"]
+    args = ["wait", f"--timeout={timeout_seconds}", "--poll=1"]
     if run_id:
         if not _RUN_RE.match(run_id):
             return {"ok": False, "error": "run_id: 1-64 letters, digits, - or _"}
         args.append(f"--run={run_id}")
+    # Session ids are token_urlsafe and can start with "-"; "--" stops argparse reading one as a flag.
+    args += ["--", session]
     code, out, err = await _run(args, timeout_seconds + 30)
     if code == 0:
         return {"ok": True, "decision": out.strip().splitlines()[-1] if out.strip() else ""}
