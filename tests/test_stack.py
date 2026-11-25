@@ -48,3 +48,15 @@ def test_budget_only_with_email():
 
 def test_log_retention_two_weeks():
     synth().all_resources_properties("AWS::Logs::LogGroup", {"RetentionInDays": 14})
+
+
+def test_oneclick_template_is_portable():
+    app = cdk.App(context={"oneclick": "true", "codeBucket": "b"})
+    t = Template.from_stack(HeyHumanStack(app, "OC", synthesizer=cdk.BootstraplessSynthesizer()))
+    j = t.to_json()
+    assert {"CodeBucket", "CodeKey", "AlertEmail"} <= set(j["Parameters"])
+    assert "HasAlertEmail" in j["Conditions"]
+    for fn in t.find_resources("AWS::Lambda::Function").values():
+        assert fn["Properties"]["Code"] == {"S3Bucket": {"Ref": "CodeBucket"}, "S3Key": {"Ref": "CodeKey"}}
+    budget = next(iter(t.find_resources("AWS::Budgets::Budget").values()))
+    assert budget["Condition"] == "HasAlertEmail"

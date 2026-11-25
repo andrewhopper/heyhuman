@@ -5,7 +5,7 @@ REGION ?= us-east-1
 EMAIL ?=
 CDK = cd infra/cdk && npx --yes aws-cdk@2
 
-.PHONY: install test synth bootstrap deploy destroy outputs smoke
+.PHONY: install test synth synth-oneclick publish-oneclick bootstrap deploy destroy outputs smoke
 
 install:
 	python3 -m pip install -r infra/cdk/requirements.txt -r requirements-dev.txt
@@ -15,6 +15,12 @@ test:
 
 synth:
 	$(CDK) synth --quiet
+
+synth-oneclick:
+	$(CDK) synth -q -c oneclick=true -c codeBucket=$(or $(BUCKET),example-bucket) > /dev/null
+
+publish-oneclick:
+	scripts/publish_oneclick.sh $(BUCKET) $(PROFILE) $(REGION)
 
 bootstrap:
 	$(CDK) bootstrap --profile $(PROFILE) --region $(REGION)
