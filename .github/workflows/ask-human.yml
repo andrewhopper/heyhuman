@@ -1,0 +1,62 @@
+# File UUID: 82d21c76-d6a6-4a56-a375-a7977481a511
+# Ask a human one question through HeyHuman, hosted on this runner for up to an hour.
+# The local server (cli/heyhuman.py serve --local) is reached through a Cloudflare quick tunnel. Logs of a public repo
+# are public, so the one-time link and the answer are printed only encrypted to .github/ask/pubkey.pem
+# (AES-256 key wrapped with RSA-OAEP); whoever holds the matching private key decrypts them.
+# Inputs: .github/ask/form.html (the form), .github/ask/message.txt (the notification text).
+name: ask-human
+on:
+  push:
+    branches: [claude/overwatch-three-container-demo-mmxddi]
+    paths: [".github/ask/**", ".github/workflows/ask-human.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ask-human
+  cancel-in-progress: true
+jobs:
+  ask:
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    env:
+      HEYHUMAN_AGENT_URL: http://127.0.0.1:8787
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: python -m pip install boto3
+      - name: Open a tunnel
+        run: |
+          curl -fsSL -o cloudflared https://github.com/cloudflare/cloudflared/releases/download/2024.11.1/cloudflared-linux-amd64
+          chmod +x cloudflared
+          ./cloudflared tunnel --no-autoupdate --url http://127.0.0.1:8787 > tunnel.log 2>&1 &
+          for i in $(seq 90); do URL=$(grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' tunnel.log | head -1); [ -n "$URL" ] && break; sleep 1; done
+          test -n "$URL" || { tail -20 tunnel.log; exit 1; }
+          echo "PUBLIC_URL=$URL" >> "$GITHUB_ENV"
+      - name: Start HeyHuman
+        run: |
+          python3 cli/heyhuman.py serve --local --public-url "$PUBLIC_URL" > serve.log 2>&1 &
+          for i in $(seq 90); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "$PUBLIC_URL/f/ready-check" || true)
+            case "$code" in 2*|3*|4*) echo "tunnel answers ($code)"; break;; esac
+            sleep 2
+          done
+      - name: Ask and wait
+        run: |
+          seal() {  # seal <file>: print base64(RSA-OAEP(aes key)) . base64(AES-256-CBC(file))
+            openssl rand -hex 32 > k.txt
+            wrapped=$(openssl pkeyutl -encrypt -pubin -inkey .github/ask/pubkey.pem -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256 -in k.txt | base64 -w0)
+            body=$(openssl enc -aes-256-cbc -pbkdf2 -salt -pass file:k.txt -in "$1" | base64 -w0)
+            rm -f k.txt
+            echo "$wrapped.$body"
+          }
+          python3 cli/heyhuman.py start --html .github/ask/form.html --message "$(cat .github/ask/message.txt)" --ttl 3600 > start.json
+          python3 -c "import json;print(json.load(open('start.json'))['url'])" > link.txt
+          echo "LINK_SEALED: $(seal link.txt)"
+          rm -f link.txt
+          session=$(python3 -c "import json;print(json.load(open('start.json'))['session'])")
+          echo "waiting on session $session"
+          if python3 cli/heyhuman.py wait "$session" --timeout 3540 --no-mqtt > answer.txt; then echo "answered"; else echo "{\"status\":\"no answer\",\"exit\":$?}" > answer.txt; fi
+          echo "ANSWER_SEALED: $(seal answer.txt)"
+          rm -f answer.txt

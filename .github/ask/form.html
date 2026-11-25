@@ -1,0 +1,91 @@
+<!-- File UUID: 6a0f3c27-9d41-4b8e-a5c2-1e7b9d3f4a60 -->
+<!-- Asset: launch-inputs · 4e81b2 · v1 · 2026-11-25 -->
+<!-- HeyHuman form: inputs needed to publish the Overwatch proposal and wiki as a public GitHub Pages site.
+     Submits one JSON string through decide(). Ask with:
+     python3 heyhuman/cli/heyhuman.py ask --html heyhuman/launch-inputs.html --message "Publish the Overwatch proposal?" --ttl 3600 -->
+<style>
+  .f{font:16px/1.45 Helvetica,Arial,sans-serif;color:#171717;max-width:560px;margin:0 auto}
+  .f h2{font-size:20px;margin:4px 0 14px}
+  .f fieldset{border:1px solid #171717;border-radius:10px;margin:0 0 14px;padding:10px 12px}
+  .f legend{font-weight:600;padding:0 6px}
+  .f .hint{color:#666666;font-size:14px;margin:2px 0 8px}
+  .f label{display:flex;gap:10px;align-items:center;min-height:56px;border-top:1px solid #F5F5F5;cursor:pointer}
+  .f label:first-of-type{border-top:0}
+  .f input[type=radio]{width:22px;height:22px;flex:none;accent-color:#171717}
+  .f input[type=text]{width:100%;min-height:48px;font-size:16px;border:1px solid #666666;border-radius:8px;padding:0 10px;box-sizing:border-box}
+  .f .send{display:block;width:100%;min-height:56px;font-size:18px;border-radius:12px;border:2px solid #171717;background:#171717;color:#FFFFFF}
+  .f .send:disabled{background:#F5F5F5;color:#666666;border-color:#666666}
+  .f .need{color:#666666;font-size:14px;margin:8px 0}
+</style>
+<div class="f">
+  <h2>Publish the Overwatch proposal</h2>
+
+  <fieldset><legend>1. Where should the public site live?</legend>
+    <label><input type="radio" name="host" value="overwatch-proposal-public"> overwatch-proposal, made public</label>
+    <label><input type="radio" name="host" value="new-public-repo"> A new public repo</label>
+    <label><input type="radio" name="host" value="no-public-site"> Keep it private for now</label>
+    <input type="text" id="repo" placeholder="New repo name, if you picked that" aria-label="New repo name">
+  </fieldset>
+
+  <fieldset><legend>2. What goes on the public wiki?</legend>
+    <label><input type="radio" name="wiki" value="proposal-only"> The proposal only</label>
+    <label><input type="radio" name="wiki" value="proposal-and-ocp"> Proposal, plus OCP RFCs and spec wiki</label>
+    <p class="hint">The second option publishes content from the private open-context-protocol repo.</p>
+  </fieldset>
+
+  <fieldset><legend>3. How may I deploy?</legend>
+    <label><input type="radio" name="deploy" value="merge-to-main"> Merge the site into main</label>
+    <label><input type="radio" name="deploy" value="deploy-from-branch"> Deploy from the Claude branch</label>
+  </fieldset>
+
+  <fieldset><legend>4. GitHub Pages setting</legend>
+    <p class="hint">Settings → Pages → Source: GitHub Actions. Only you can change it.</p>
+    <label><input type="radio" name="pages" value="done"> Done</label>
+    <label><input type="radio" name="pages" value="later"> I'll do it after</label>
+  </fieldset>
+
+  <fieldset><legend>5. MVP scope (#29)</legend>
+    <label><input type="radio" name="mvp" value="built-today"> What CLI.md marks as built today</label>
+    <label><input type="radio" name="mvp" value="add-approvals"> That, plus approvals</label>
+  </fieldset>
+
+  <fieldset><legend>6. Seven bounded contexts (#24)</legend>
+    <label><input type="radio" name="contexts" value="approve"> Approve</label>
+    <label><input type="radio" name="contexts" value="will-comment"> I'll comment on the PR</label>
+  </fieldset>
+
+  <fieldset><legend>7. RFC owners (#32)</legend>
+    <label><input type="radio" name="owners" value="all-andrewhopper"> All 17 are mine</label>
+    <label><input type="radio" name="owners" value="some-differ"> Some differ</label>
+    <input type="text" id="owners-note" placeholder="Which RFCs, and whose" aria-label="Owner changes">
+  </fieldset>
+
+  <fieldset><legend>8. D-33: who ingests browser errors?</legend>
+    <label><input type="radio" name="d33" value="error-tracker"> The error tracker</label>
+    <label><input type="radio" name="d33" value="broker"> The broker</label>
+    <label><input type="radio" name="d33" value="both"> Both</label>
+  </fieldset>
+
+  <p class="need" id="need">Answer 1 to 4 to send. 5 to 8 can wait.</p>
+  <button class="send" id="send" disabled>Send answers</button>
+</div>
+<script>
+  const required = ["host", "wiki", "deploy", "pages"];
+  const all = [...required, "mvp", "contexts", "owners", "d33"];
+  const pick = n => (document.querySelector(`input[name="${n}"]:checked`) || {}).value || null;
+  const send = document.getElementById("send");
+  const need = document.getElementById("need");
+  function refresh() {
+    const missing = required.filter(n => !pick(n));
+    send.disabled = missing.length > 0;
+    need.textContent = missing.length ? `Still needed: ${missing.map(n => required.indexOf(n) + 1).join(", ")}` : "Ready to send. 5 to 8 are optional.";
+  }
+  document.querySelectorAll("input").forEach(i => i.addEventListener("input", refresh));
+  send.addEventListener("click", () => {
+    const answer = Object.fromEntries(all.map(n => [n, pick(n)]));
+    answer.repo = document.getElementById("repo").value.trim() || null;
+    answer.owners_note = document.getElementById("owners-note").value.trim() || null;
+    decide(JSON.stringify(answer));
+  });
+  refresh();
+</script>
