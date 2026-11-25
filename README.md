@@ -3,6 +3,22 @@
 
 > **Experimental code. Do not use in production.** See [SECURITY.md](SECURITY.md) for what is fixed and what is not.
 
+## Try it: paste one of these into Claude Code
+
+```
+Claude, let's play tic-tac-toe using https://github.com/andrewhopper/heyhuman
+```
+
+```
+Claude, use https://github.com/andrewhopper/heyhuman to ask me on my phone before you delete any files.
+```
+
+```
+Claude, deploy https://github.com/andrewhopper/heyhuman to my AWS sandbox account and send me a test question.
+```
+
+The first two run locally with `serve --local`, with no AWS account needed. The third deploys to your own account; for the step-by-step version, see [Deploy with Claude Code](docs/deploy-with-claude-code.md).
+
 An agent writes a small form (or picks a template), gets a one-time link, and waits. Anyone
 holding the link answers on any device: you on your phone, or a coworker you make the approver.
 The answer comes back to the agent as a string.
